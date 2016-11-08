@@ -3,9 +3,6 @@ package uk.org.cambsfire.aws.s3;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
@@ -17,10 +14,16 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 
 public class AwsS3Upload {
 
-    private static final String ORIGINAL_NAME_HEADER = "x-cfrs-filename";
     private static final String BUCKET_PREFIX = "uk.gov.cambsfire.sr.";
 
-    public AmazonS3 createAmazonS3Client(final String regionName, final String accessKey,
+    public static String uploadObject(final String regionName, final String accessKey,
+            final String secretKey, final String s3ObjectPath,
+            final String contentType, final InputStream byteStream, final long contentLength) {
+        final AmazonS3 client = createAmazonS3Client(regionName, accessKey, secretKey);
+        return uploadObject(client, s3ObjectPath, contentType, byteStream, contentLength);
+    }
+
+    private static AmazonS3 createAmazonS3Client(final String regionName, final String accessKey,
             final String secretKey) {
         final Region region = Region.getRegion(Regions.fromName(regionName));
         final BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
@@ -30,9 +33,9 @@ public class AwsS3Upload {
         return client;
     }
 
-    public String uploadObject(final AmazonS3 client, final String originalFilename, final String s3ObjectPath,
+    private static String uploadObject(final AmazonS3 client, final String s3ObjectPath,
             final String contentType, final InputStream byteStream, final long contentLength) {
-        final ObjectMetadata metadata = createS3Metadata(originalFilename, contentType, contentLength);
+        final ObjectMetadata metadata = createS3Metadata(contentType, contentLength);
         final String[] bucketAndFile = parseObjectPath(s3ObjectPath);
         final String bucketName = BUCKET_PREFIX + bucketAndFile[0];
         createBucketIfNonExistent(client, bucketName);
@@ -41,13 +44,13 @@ public class AwsS3Upload {
         return client.getUrl(bucketAndFile[0], bucketAndFile[1]).toString();
     }
 
-    private void createBucketIfNonExistent(final AmazonS3 client, final String bucketName) {
+    private static void createBucketIfNonExistent(final AmazonS3 client, final String bucketName) {
         if (!client.doesBucketExist(bucketName)) {
             client.createBucket(bucketName);
         }
     }
 
-    private String[] parseObjectPath(final String s3ObjectPath) {
+    private static String[] parseObjectPath(final String s3ObjectPath) {
         if (s3ObjectPath == null || s3ObjectPath.length() == 0) {
             throw new IllegalArgumentException("An S3 object path must be provided");
         }
@@ -62,19 +65,15 @@ public class AwsS3Upload {
         return new String[] { s3ObjectPath.substring(0, lastSlashPos), s3ObjectPath.substring(lastSlashPos + 1) };
     }
 
-    private ObjectMetadata createS3Metadata(final String originalFilename,
-            final String contentType,
+    private static ObjectMetadata createS3Metadata(final String contentType,
             final long contentLength) {
         final ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType(contentType);
         metadata.setContentLength(contentLength);
-        final Map<String, String> customProperties = new HashMap<>();
-        customProperties.put(ORIGINAL_NAME_HEADER, originalFilename);
-        metadata.setUserMetadata(customProperties);
         return metadata;
     }
 
-    private void writeImageToPersistentStore(final AmazonS3 client, final String bucketName,
+    private static void writeImageToPersistentStore(final AmazonS3 client, final String bucketName,
             final String imageKey,
             final ObjectMetadata imageMetadata,
             final InputStream objectBytes) {
@@ -84,7 +83,7 @@ public class AwsS3Upload {
                     objectStream,
                     imageMetadata));
         } catch (final IOException e) {
-            throw new UncheckedIOException(e);
+            throw new RuntimeException(e);
         }
     }
 }
