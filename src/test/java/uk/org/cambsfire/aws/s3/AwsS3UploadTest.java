@@ -6,7 +6,6 @@ public class AwsS3UploadTest {
 
     @Test
     public void test() throws Exception {
-
         // hidden
     }
 }

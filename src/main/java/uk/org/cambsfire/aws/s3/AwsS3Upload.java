@@ -3,18 +3,22 @@ package uk.org.cambsfire.aws.s3;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Base64;
+
+import org.apache.commons.codec.binary.Base64;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
+import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 public class AwsS3Upload {
 
+    private static final String S3_AMAZONAWS_COM = "https://s3.amazonaws.com/";
     private static final String BUCKET_PREFIX = "uk.gov.cambsfire.sr.";
 
     public static String uploadObject(final String regionName, final String accessKey,
@@ -36,7 +40,7 @@ public class AwsS3Upload {
 
     private static String uploadObject(final AmazonS3 client, final String s3ObjectPath,
             final String contentType, final String base64Bytes) {
-        final byte[] objectBytes = Base64.getDecoder().decode(base64Bytes);
+        final byte[] objectBytes = Base64.decodeBase64(base64Bytes);
         final ObjectMetadata metadata = createS3Metadata(contentType, objectBytes.length);
         final String[] bucketAndFile = parseObjectPath(s3ObjectPath);
         final String bucketName = BUCKET_PREFIX + bucketAndFile[0];
@@ -47,12 +51,12 @@ public class AwsS3Upload {
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
-        return client.getUrl(bucketAndFile[0], bucketAndFile[1]).toString();
+        return S3_AMAZONAWS_COM + bucketName + "/" + bucketAndFile[1];
     }
 
     private static void createBucketIfNonExistent(final AmazonS3 client, final String bucketName) {
         if (!client.doesBucketExist(bucketName)) {
-            client.createBucket(bucketName);
+            client.createBucket(new CreateBucketRequest(bucketName).withCannedAcl(CannedAccessControlList.PublicRead));
         }
     }
 
@@ -86,6 +90,7 @@ public class AwsS3Upload {
         client.putObject(new PutObjectRequest(bucketName,
                 imageKey,
                 objectStream,
-                imageMetadata));
+                imageMetadata)
+                        .withCannedAcl(CannedAccessControlList.PublicRead));
     }
 }
