@@ -1,8 +1,9 @@
 package uk.org.cambsfire.aws.s3;
 
-import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Base64;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
@@ -18,9 +19,9 @@ public class AwsS3Upload {
 
     public static String uploadObject(final String regionName, final String accessKey,
             final String secretKey, final String s3ObjectPath,
-            final String contentType, final InputStream byteStream, final long contentLength) {
+            final String contentType, final String base64Bytes) {
         final AmazonS3 client = createAmazonS3Client(regionName, accessKey, secretKey);
-        return uploadObject(client, s3ObjectPath, contentType, byteStream, contentLength);
+        return uploadObject(client, s3ObjectPath, contentType, base64Bytes);
     }
 
     private static AmazonS3 createAmazonS3Client(final String regionName, final String accessKey,
@@ -34,13 +35,18 @@ public class AwsS3Upload {
     }
 
     private static String uploadObject(final AmazonS3 client, final String s3ObjectPath,
-            final String contentType, final InputStream byteStream, final long contentLength) {
-        final ObjectMetadata metadata = createS3Metadata(contentType, contentLength);
+            final String contentType, final String base64Bytes) {
+        final byte[] objectBytes = Base64.getDecoder().decode(base64Bytes);
+        final ObjectMetadata metadata = createS3Metadata(contentType, objectBytes.length);
         final String[] bucketAndFile = parseObjectPath(s3ObjectPath);
         final String bucketName = BUCKET_PREFIX + bucketAndFile[0];
         createBucketIfNonExistent(client, bucketName);
-        writeImageToPersistentStore(client, bucketName, bucketAndFile[1], metadata, byteStream);
-
+        try (final ByteArrayInputStream byteStream =
+                new ByteArrayInputStream(objectBytes)) {
+            writeImageToPersistentStore(client, bucketName, bucketAndFile[1], metadata, byteStream);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
         return client.getUrl(bucketAndFile[0], bucketAndFile[1]).toString();
     }
 
@@ -76,14 +82,10 @@ public class AwsS3Upload {
     private static void writeImageToPersistentStore(final AmazonS3 client, final String bucketName,
             final String imageKey,
             final ObjectMetadata imageMetadata,
-            final InputStream objectBytes) {
-        try (BufferedInputStream objectStream = new BufferedInputStream(objectBytes)) {
-            client.putObject(new PutObjectRequest(bucketName,
-                    imageKey,
-                    objectStream,
-                    imageMetadata));
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+            final InputStream objectStream) {
+        client.putObject(new PutObjectRequest(bucketName,
+                imageKey,
+                objectStream,
+                imageMetadata));
     }
 }
