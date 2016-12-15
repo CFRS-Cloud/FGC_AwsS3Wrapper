@@ -1,5 +1,38 @@
 package uk.org.cambsfire.aws.s3;
 
+/*-
+ * #%L
+ * AWS S3 Wrapper for BPM
+ * %%
+ * Copyright (C) 2016 Cambridgeshire Fire and Rescue Service
+ * %%
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the Cambridgeshire Fire and Rescue Service nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,9 +51,17 @@ import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
-public class AwsS3Upload {
+public final class AwsS3Upload {
     private static final String BUCKET_PREFIX = "uk.gov.cambsfire.sr.";
 
+    private AwsS3Upload() {
+        // Utility class
+    }
+
+    /**
+     * String arguments provided for calling via Javascript integration
+     */
+    @SuppressWarnings("PMD.UseObjectForClearerAPI")
     public static String uploadObject(final String regionName, final String accessKey,
             final String secretKey, final String s3ObjectPath,
             final String contentType, final String base64Bytes) {
@@ -50,7 +91,7 @@ public class AwsS3Upload {
             writeImageToPersistentStore(client, bucketName, bucketAndFile[1], metadata, byteStream);
             return getHttpUrlToFile(client, bucketName, bucketAndFile[1]);
         } catch (final IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedAwsS3Exception(e);
         }
     }
 

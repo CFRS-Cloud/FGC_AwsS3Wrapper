@@ -34,11 +34,29 @@ package uk.org.cambsfire.aws.s3;
  */
 
 
-import org.junit.Test;
+public class UncheckedAwsS3Exception extends RuntimeException {
 
-public class AwsS3UploadTest {
-    @Test
-    public void test() throws Exception {
-        // hidden
+    private static final long serialVersionUID = 1L;
+
+    public UncheckedAwsS3Exception() {
+        super();
     }
+
+    public UncheckedAwsS3Exception(final String message, final Throwable cause, final boolean enableSuppression,
+            final boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
+
+    public UncheckedAwsS3Exception(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
+    public UncheckedAwsS3Exception(final String message) {
+        super(message);
+    }
+
+    public UncheckedAwsS3Exception(final Throwable cause) {
+        super(cause);
+    }
+
 }
