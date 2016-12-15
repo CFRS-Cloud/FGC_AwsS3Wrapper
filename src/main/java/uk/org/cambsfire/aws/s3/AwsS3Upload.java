@@ -3,6 +3,8 @@ package uk.org.cambsfire.aws.s3;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -17,8 +19,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 public class AwsS3Upload {
-
-    private static final String S3_AMAZONAWS_COM = "https://s3.amazonaws.com/";
     private static final String BUCKET_PREFIX = "uk.gov.cambsfire.sr.";
 
     public static String uploadObject(final String regionName, final String accessKey,
@@ -48,10 +48,16 @@ public class AwsS3Upload {
         try (final ByteArrayInputStream byteStream =
                 new ByteArrayInputStream(objectBytes)) {
             writeImageToPersistentStore(client, bucketName, bucketAndFile[1], metadata, byteStream);
+            return getHttpUrlToFile(client, bucketName, bucketAndFile[1]);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
-        return S3_AMAZONAWS_COM + bucketName + "/" + bucketAndFile[1];
+    }
+
+    private static String getHttpUrlToFile(final AmazonS3 client, final String bucketName, final String fileName)
+            throws MalformedURLException {
+        final URL secureUrl = client.getUrl(bucketName, fileName);
+        return new URL("http", secureUrl.getHost(), secureUrl.getFile()).toString();
     }
 
     private static void createBucketIfNonExistent(final AmazonS3 client, final String bucketName) {
