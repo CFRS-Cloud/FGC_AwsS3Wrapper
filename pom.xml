@@ -1,17 +1,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>uk.gov.cambsfire</groupId>
-        <artifactId>cfrs-oss-parent</artifactId>
-        <version>1.1</version>
-    </parent>
-
     <modelVersion>4.0.0</modelVersion>
+    <groupId>uk.gov.cambsfire</groupId>
     <artifactId>aws-s3-wrapper</artifactId>
     <version>1.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>AWS S3 Wrapper for BPM</name>
+    <organization>
+        <name>Cambridgeshire Fire and Rescue Service</name>
+        <url>www.cambsfire.gov.uk</url>
+    </organization>
+    <inceptionYear>2016</inceptionYear>
+    <distributionManagement>
+        <repository>
+            <id>cfrs-aws-release</id>
+            <name>CFRS AWS Release Repository</name>
+            <url>${cfrs-aws-release-repository-url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>cfrs-aws-snapshot</id>
+            <name>CFRS AWS Snapshot Repository</name>
+            <url>${cfrs-aws-snapshot-repository-url}</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <licenses>
         <license>
@@ -38,7 +50,13 @@
         <project.encoding>UTF-8</project.encoding>
 
         <aws.version>1.11.86</aws.version>
+        <commonscodec.version>1.10</commonscodec.version>
+        <commonsio.version>2.5</commonsio.version>
+        
+        <junit.version>4.12</junit.version>
+        <assertj.version>3.6.1</assertj.version>
         <powermock.version>1.6.6</powermock.version>
+        <mockito.version>1.10.19</mockito.version>
     </properties>
 
     <dependencies>
@@ -51,26 +69,30 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+            <version>${commonsio.version}</version>
         </dependency>
 
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
+            <version>${commonscodec.version}</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -85,9 +107,108 @@
             <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
     <build>
+        <extensions>
+            <extension>
+                <groupId>org.springframework.build</groupId>
+                <artifactId>aws-maven</artifactId>
+                <version>5.0.0.RELEASE</version>
+            </extension>
+        </extensions>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>2.17</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>7.3</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <configuration>
+                                <configLocation>https://raw.githubusercontent.com/STEP-Cloud/FGC_JavaBuildTools/8d1b70d2667caf3b069cdb6bd11aa8bfa5d77d79/src/main/resources/config/cambsfire-checkstyle-rules.xml</configLocation>
+                                <encoding>UTF-8</encoding>
+                                <consoleOutput>true</consoleOutput>
+                                <failOnViolation>true</failOnViolation>
+                                <failsOnError>true</failsOnError>
+                                <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                                <excludes>**/assertj/**,**/*Assert.java</excludes>
+                                <linkXRef>false</linkXRef>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.6</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>uk.gov.cambsfire</groupId>
+                            <artifactId>build-tools</artifactId>
+                            <version>1.0</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <sourceEncoding>utf-8</sourceEncoding>
+                        <failOnViolation>true</failOnViolation>
+                        <failurePriority>2</failurePriority>
+                        <verbose>true</verbose>
+                        <rulesets>
+                            <ruleset>https://raw.githubusercontent.com/STEP-Cloud/FGC_JavaBuildTools/8d1b70d2667caf3b069cdb6bd11aa8bfa5d77d79/src/main/resources/config/cambsfire-pmd-rules.xml</ruleset>
+                        </rulesets>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                                <goal>cpd-check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>1.10</version>
+                    <configuration>
+                        <verbose>false</verbose>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>first</id>
+                            <goals>
+                                <goal>update-file-header</goal>
+                                <goal>update-project-license</goal>
+                            </goals>
+                            <phase>validate</phase>
+                            <configuration>
+                                <licenseName>bsd_3</licenseName>
+                                <roots>
+                                    <root>src/main/java</root>
+                                    <root>src/test/java</root>
+                                </roots>
+                                <emptyLineAfterHeader>true</emptyLineAfterHeader>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -96,7 +217,6 @@
                     <excludedGroups>uk.org.cambsfire.aws.s3.test.IntegrationTest</excludedGroups>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
