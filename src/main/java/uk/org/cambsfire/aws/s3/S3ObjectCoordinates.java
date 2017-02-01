@@ -34,35 +34,26 @@ package uk.org.cambsfire.aws.s3;
  */
 
 
-import com.amazonaws.services.s3.AmazonS3;
-
 /**
- * BPM entry-point suitable for calling from Javascript
+ * Bucket and path tuple for an object in S3
  *
  * @author david.bower
  *
  */
-public final class AwsS3Upload {
+public final class S3ObjectCoordinates {
+    private final String bucketName;
+    private final String objectPath;
 
-    private AwsS3Upload() {
-        // Utility class
+    public S3ObjectCoordinates(final String bucketName, final String objectPath) {
+        this.bucketName = bucketName;
+        this.objectPath = objectPath;
     }
 
-    /**
-     * String arguments provided for calling via Javascript integration.
-     *
-     * @return The public URL to the uploaded object
-     * @throws UncheckedAwsS3Exception
-     *             on error any upload error
-     */
-    @SuppressWarnings("PMD.UseObjectForClearerAPI")
-    public static String uploadObject(final String regionName, final String accessKey,
-            final String secretKey, final String s3ObjectPath,
-            final String contentType, final String base64Bytes) {
-        final AmazonS3 client = S3Utils.createAmazonS3Client(regionName, accessKey, secretKey);
-        final S3UploadPackage uploadPackage = new S3UploadPackage(s3ObjectPath, contentType, base64Bytes);
-        final S3Uploader uploader = new S3Uploader(client);
-        return uploader.publicUpload(uploadPackage);
+    public String getBucketName() {
+        return bucketName;
     }
 
+    public String getObjectPath() {
+        return objectPath;
+    }
 }

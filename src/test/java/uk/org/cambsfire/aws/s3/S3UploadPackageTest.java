@@ -34,35 +34,46 @@ package uk.org.cambsfire.aws.s3;
  */
 
 
-import com.amazonaws.services.s3.AmazonS3;
+import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * BPM entry-point suitable for calling from Javascript
- *
- * @author david.bower
- *
- */
-public final class AwsS3Upload {
+import java.io.IOException;
+import java.util.Base64;
 
-    private AwsS3Upload() {
-        // Utility class
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
+public class S3UploadPackageTest {
+
+    @Test
+    public void s3UploadPackageConvertsBase64ToBytes() throws IOException {
+        // given
+        final S3ObjectCoordinates objectCoordinates = new S3ObjectCoordinates("bucketName", "objectPath");
+        final byte[] inputBytes = new byte[] { 1, 1, 1 };
+        final String base64Content = Base64.getEncoder().encodeToString(inputBytes);
+
+        // when
+        final S3UploadPackage uploadPackage = new S3UploadPackage(objectCoordinates, "contentType", base64Content);
+
+        // then
+        final byte[] decodedBytes = new byte[3];
+        IOUtils.readFully(uploadPackage.getInputStream(), decodedBytes);
+        assertThat(decodedBytes).containsExactly(inputBytes);
+        assertThat(uploadPackage.getContentLength()).isEqualTo(3);
     }
 
-    /**
-     * String arguments provided for calling via Javascript integration.
-     *
-     * @return The public URL to the uploaded object
-     * @throws UncheckedAwsS3Exception
-     *             on error any upload error
-     */
-    @SuppressWarnings("PMD.UseObjectForClearerAPI")
-    public static String uploadObject(final String regionName, final String accessKey,
-            final String secretKey, final String s3ObjectPath,
-            final String contentType, final String base64Bytes) {
-        final AmazonS3 client = S3Utils.createAmazonS3Client(regionName, accessKey, secretKey);
-        final S3UploadPackage uploadPackage = new S3UploadPackage(s3ObjectPath, contentType, base64Bytes);
-        final S3Uploader uploader = new S3Uploader(client);
-        return uploader.publicUpload(uploadPackage);
-    }
+    @Test
+    public void s3UploadPackageConvertsObjectPathNameToCoordinates() {
+        // given
+        final byte[] inputBytes = new byte[] { 1, 1, 1 };
+        final String base64Content = Base64.getEncoder().encodeToString(inputBytes);
 
+        // when
+        final S3UploadPackage uploadPackage = new S3UploadPackage("bucket/path", "contentType", base64Content);
+
+        // then
+        final S3ObjectCoordinates objectCoordinates = uploadPackage.getObjectCoordinates();
+        assertThat(objectCoordinates.getBucketName()).isEqualTo("bucket");
+        assertThat(objectCoordinates.getObjectPath()).isEqualTo("path");
+
+    }
 }
