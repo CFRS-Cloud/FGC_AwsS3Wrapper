@@ -51,8 +51,13 @@ import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
+/**
+ * PoC of an S3 uploader to be called from Javascript in BPM
+ * 
+ * @author david.bower
+ *
+ */
 public final class AwsS3Upload {
-    private static final String BUCKET_PREFIX = "uk.gov.cambsfire.sr.";
 
     private AwsS3Upload() {
         // Utility class
@@ -84,12 +89,13 @@ public final class AwsS3Upload {
         final byte[] objectBytes = Base64.decodeBase64(base64Bytes);
         final ObjectMetadata metadata = createS3Metadata(contentType, objectBytes.length);
         final String[] bucketAndFile = parseObjectPath(s3ObjectPath);
-        final String bucketName = BUCKET_PREFIX + bucketAndFile[0];
+        final String bucketName = bucketAndFile[0];
         createBucketIfNonExistent(client, bucketName);
         try (final ByteArrayInputStream byteStream =
                 new ByteArrayInputStream(objectBytes)) {
-            writeImageToPersistentStore(client, bucketName, bucketAndFile[1], metadata, byteStream);
-            return getHttpUrlToFile(client, bucketName, bucketAndFile[1]);
+            final String fileName = bucketAndFile[1];
+            writeImageToPersistentStore(client, bucketName, fileName, metadata, byteStream);
+            return getHttpUrlToFile(client, bucketName, fileName);
         } catch (final IOException e) {
             throw new UncheckedAwsS3Exception(e);
         }
