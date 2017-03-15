@@ -153,13 +153,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
                     <version>3.6</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>uk.gov.cambsfire</groupId>
-                            <artifactId>build-tools</artifactId>
-                            <version>1.0</version>
-                        </dependency>
-                    </dependencies>
                     <configuration>
                         <sourceEncoding>utf-8</sourceEncoding>
                         <failOnViolation>true</failOnViolation>
